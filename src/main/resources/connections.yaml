@@ -1,0 +1,6 @@
+app:
+  datasource:
+    temp:
+      url: jdbc:postgresql://localhost:5432/blk_x
+      username: postgres
+      password: blkpassword
