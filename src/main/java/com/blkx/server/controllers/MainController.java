@@ -1,15 +1,27 @@
 package com.blkx.server.controllers;
 
 import com.blkx.server.constants.ResponseMessage;
+import com.blkx.server.models.GenerateRequestModel;
 import com.blkx.server.models.ResponseModel;
 import com.blkx.server.models.TableMetaData;
 import com.blkx.server.services.DatabaseService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 public class MainController {
@@ -74,6 +86,69 @@ public class MainController {
             response.setSuccess(false);
             response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
             e.printStackTrace();
+        }
+        return response;
+    }
+
+    @PostMapping("/generate")
+    public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
+        ResponseModel response = new ResponseModel();
+//        USE THIS WHEN FULL MODELS CAN BE SENT
+//        List<String> data = body.stream()
+//                .filter(model -> model.getColumnName() == null)
+//                .map(GenerateRequestModel::getTableName)
+//                .collect(Collectors.toList());
+
+        Map<String, String> groupedData = body.stream()
+                .collect(Collectors.groupingBy(
+                        GenerateRequestModel::getTableName,
+                        Collectors.mapping(GenerateRequestModel::getColumnName, Collectors.joining(" "))
+                )
+        );
+
+        String query = groupedData.entrySet().stream()
+                .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(" "));
+
+        query = String.format("{ \"query\":  \"{ %s }\" }", query);
+
+        UUID uuid = databaseService.insertNewQuery(query);
+        response.setSuccess(true);
+        response.setMessage(ResponseMessage.ADD_SUCCESS.toString());
+        response.setData(uuid.toString());
+        return response;
+    }
+
+    @GetMapping("/api/{uuid}")
+    public ResponseModel performQuery(@PathVariable("uuid") String uuidStr) {
+        ResponseModel response = new ResponseModel();
+        try {
+            UUID uuid = UUID.fromString(uuidStr);
+            String query = databaseService.getQuery(uuid);
+            if(query == null) throw new IllegalArgumentException();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/v1/graphql"))
+                .headers("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(query))
+                .build();
+
+            HttpResponse<String> queryResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> json = mapper.readValue(queryResponse.body(), new TypeReference<>() {});
+
+            response.setSuccess(true);
+            response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
+            response.setData(json);
+        }
+        catch (IllegalArgumentException e) {
+            response.setSuccess(false);
+            response.setMessage(ResponseMessage.INVALID_PATH.toString());
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+            response.setSuccess(false);
+            response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
         }
         return response;
     }

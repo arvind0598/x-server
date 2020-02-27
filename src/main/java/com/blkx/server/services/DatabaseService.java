@@ -7,15 +7,13 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class DatabaseService {
 
     private DataSource dataSource;
+    private Map<UUID, String> queryTable = new HashMap<>();
 
     @Autowired
     public DatabaseService(DataSource dataSource) {
@@ -46,7 +44,6 @@ public class DatabaseService {
 
             while(resultSet.next()) {
                 String tableName = resultSet.getString("TABLE_NAME");
-                System.out.println(tableName);
                 tableNames.add(tableName);
             }
 
@@ -72,4 +69,15 @@ public class DatabaseService {
             return metaData;
         }
     }
+
+    public UUID insertNewQuery(String query) {
+        UUID uuid = UUID.randomUUID();
+        queryTable.put(uuid, query);
+        return uuid;
+    }
+
+    public String getQuery(UUID uuid) {
+        return queryTable.getOrDefault(uuid, null);
+    }
+
 }
