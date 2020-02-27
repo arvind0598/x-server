@@ -4,7 +4,9 @@ import com.blkx.server.constants.ResponseMessage;
 import com.blkx.server.models.GenerateRequestModel;
 import com.blkx.server.models.ResponseModel;
 import com.blkx.server.models.TableMetaData;
+import com.blkx.server.services.ConfigService;
 import com.blkx.server.services.DatabaseService;
+import com.blkx.server.services.HasuraService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,10 +29,14 @@ import java.util.stream.Collectors;
 public class MainController {
 
     private DatabaseService databaseService;
+    private HasuraService hasuraService;
+    private ConfigService configService;
 
     @Autowired
-    public MainController(DatabaseService databaseService) {
+    public MainController(DatabaseService databaseService, HasuraService hasuraService, ConfigService configService) {
         this.databaseService = databaseService;
+        this.hasuraService = hasuraService;
+        this.configService = configService;
     }
 
     @GetMapping("/hello")
@@ -112,7 +118,7 @@ public class MainController {
 
         query = String.format("{ \"query\":  \"{ %s }\" }", query);
 
-        UUID uuid = databaseService.insertNewQuery(query);
+        UUID uuid = configService.insertNewQuery(query);
         response.setSuccess(true);
         response.setMessage(ResponseMessage.ADD_SUCCESS.toString());
         response.setData(uuid.toString());
@@ -124,23 +130,14 @@ public class MainController {
         ResponseModel response = new ResponseModel();
         try {
             UUID uuid = UUID.fromString(uuidStr);
-            String query = databaseService.getQuery(uuid);
+            String query = configService.getQuery(uuid);
             if(query == null) throw new IllegalArgumentException();
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/v1/graphql"))
-                .headers("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(query))
-                .build();
-
-            HttpResponse<String> queryResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> json = mapper.readValue(queryResponse.body(), new TypeReference<>() {});
+            Map<String, Object> responseData = hasuraService.fetchData(query);
 
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
-            response.setData(json);
+            response.setData(responseData);
         }
         catch (IllegalArgumentException e) {
             response.setSuccess(false);

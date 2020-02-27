@@ -13,7 +13,6 @@ import java.util.*;
 public class DatabaseService {
 
     private DataSource dataSource;
-    private Map<UUID, String> queryTable = new HashMap<>();
 
     @Autowired
     public DatabaseService(DataSource dataSource) {
@@ -69,15 +68,4 @@ public class DatabaseService {
             return metaData;
         }
     }
-
-    public UUID insertNewQuery(String query) {
-        UUID uuid = UUID.randomUUID();
-        queryTable.put(uuid, query);
-        return uuid;
-    }
-
-    public String getQuery(UUID uuid) {
-        return queryTable.getOrDefault(uuid, null);
-    }
-
 }

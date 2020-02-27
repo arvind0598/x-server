@@ -16,21 +16,6 @@ public class ServerApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ServerApplication.class, args);
-
-		String schema = "type Query{hello: String}";
-		SchemaParser schemaParser = new SchemaParser();
-		TypeDefinitionRegistry registry = schemaParser.parse(schema);
-
-		RuntimeWiring wiring = RuntimeWiring.newRuntimeWiring()
-				.type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
-				.build();
-
-		SchemaGenerator schemaGenerator = new SchemaGenerator();
-		GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(registry, wiring);
-
-		GraphQL build = GraphQL.newGraphQL(graphQLSchema).build();
-		ExecutionResult result = build.execute("{hello}");
-		System.out.println(result.getData().toString());
 	}
 
 }
