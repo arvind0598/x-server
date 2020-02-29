@@ -7,18 +7,11 @@ import com.blkx.server.models.TableMetaData;
 import com.blkx.server.services.ConfigService;
 import com.blkx.server.services.DatabaseService;
 import com.blkx.server.services.HasuraService;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
