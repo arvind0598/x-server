@@ -31,7 +31,10 @@ First, ```docker ps --all``` and make sure that no instances of blk-x-postgres o
 ### Postgres
 
  ```shell script
-docker run --rm --name blk-x-postgres -e POSTGRES_PASSWORD=blkpassword -d -p 5432:5432 postgres
+docker run --rm -d --name blk-x-postgres \
+  -e POSTGRES_PASSWORD=blkpassword \
+  -p 5432:5432 \
+  postgres
 ```
 
 Then ```docker ps``` to verify that Postgres is running on port 5432.
@@ -56,7 +59,11 @@ Now make tables.
 ### Hasura
 
 ```shell script
-docker run --rm -d --name blk-x-hasura -e HASURA_GRAPHQL_DATABASE_URL=postgres://postgres:blkpassword@localhost:5432/blk_x -e HASURA_GRAPHQL_ENABLE_CONSOLE=true --net=host hasura/graphql-engine:v1.1.0
+docker run --rm -d --name blk-x-hasura \
+  -e HASURA_GRAPHQL_DATABASE_URL=postgres://postgres:blkpassword@localhost:5432/blk_x \
+  -e HASURA_GRAPHQL_ENABLE_CONSOLE=true \
+  --net=host \
+  hasura/graphql-engine:v1.1.0
 ```
 
 Then ```docker ps``` to verify that Postgres is running on port 8080.
