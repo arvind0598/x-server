@@ -1,6 +1,7 @@
 package com.blkx.server.controllers;
 
 import com.blkx.server.constants.ResponseMessage;
+import com.blkx.server.models.DataSourceList;
 import com.blkx.server.models.GenerateRequestModel;
 import com.blkx.server.models.ResponseModel;
 import com.blkx.server.models.TableMetaData;
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -24,6 +26,7 @@ public class MainController {
     private DatabaseService databaseService;
     private HasuraService hasuraService;
     private ConfigService configService;
+    private DataSourceList dataSourceList =DataSourceList.getInstance();
 
     @Autowired
     public MainController(DatabaseService databaseService, HasuraService hasuraService, ConfigService configService) {
@@ -57,9 +60,10 @@ public class MainController {
         return response;
     }
 
-    @GetMapping("/tables")
-    public ResponseModel getTableNames() {
+    @GetMapping("/{database}/tables")
+    public ResponseModel getTableNames(@PathVariable("database") String database) {
         ResponseModel response = new ResponseModel();
+        databaseService.setActiveDataSource(database);
         try {
             List<String> tableNames = databaseService.getTableNames();
             response.setSuccess(true);
@@ -140,6 +144,15 @@ public class MainController {
             response.setSuccess(false);
             response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
         }
+        return response;
+    }
+
+    @GetMapping("/dbs")
+    public ResponseModel sendDataSources(){
+        ResponseModel response = new ResponseModel();
+            response.setSuccess(true);
+            response.setMessage(ResponseMessage.SEND_SUCCESS.toString());
+            response.setData(dataSourceList.getMap().keySet());
         return response;
     }
 
