@@ -1,5 +1,7 @@
 package com.blkx.server.services;
 
+import com.blkx.server.config.DatasourceConfig;
+import com.blkx.server.models.DataSourceList;
 import com.blkx.server.models.TableMetaData;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +14,14 @@ import java.util.*;
 @Service
 public class DatabaseService {
 
+//    @Autowired
     private DataSource dataSource;
+    private DataSourceList dataSourceList = DataSourceList.getInstance();
 
-    @Autowired
-    public DatabaseService(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
+//    @Autowired
+//    public DatabaseService(DataSource dataSource) {
+//        this.dataSource = dataSource;
+//    }
 
 //    move this method somewhere else
     private String getType(Integer num) {
@@ -67,5 +71,13 @@ public class DatabaseService {
             connection.close();
             return metaData;
         }
+    }
+
+    public void setActiveDataSource(String database){
+        dataSource = dataSourceList.getMap().get(database);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
     }
 }
