@@ -13,8 +13,9 @@ We can use graphql and protos for this problem
 
 This project is the Spring Boot enabled Java server that runs on port 8081. It currently offers the following routes to use:
 
-1. ```GET /tables``` to fetch a list of all entities in the mock database.
-1. ```GET /tables/{tableName}```  to fetch a list of all columns that are in a particular table.
+1. ```GET /sources``` to fetch a list of all the datasources that are currently configured.
+1. ```GET /{database}/tables``` to set the active database and fetch all the tables in it.
+1. ```GET /tables/{tableName}```  to fetch a list of all columns that are in a particular table, from the active database.
 1. ```POST /generate``` with a list of entities required to generate an API and fetch the UUID at which it is hosted.
 1. ```GET /api/{uuid}``` to hit a generated API by passing the UUID that was returned.
 
