@@ -1,9 +1,7 @@
 package com.blkx.server.services;
 
-import com.blkx.server.config.DatasourceConfig;
-import com.blkx.server.models.DataSourceList;
+import com.blkx.server.beans.DataSourceRegistry;
 import com.blkx.server.models.TableMetaData;
-import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,16 +12,15 @@ import java.util.*;
 @Service
 public class DatabaseService {
 
-//    @Autowired
+    private DataSourceRegistry dataSourceRegistry;
     private DataSource dataSource;
-    private DataSourceList dataSourceList = DataSourceList.getInstance();
 
-//    @Autowired
-//    public DatabaseService(DataSource dataSource) {
-//        this.dataSource = dataSource;
-//    }
+    @Autowired
+    public DatabaseService(DataSourceRegistry dataSourceRegistry) {
+        this.dataSourceRegistry = dataSourceRegistry;
+    }
 
-//    move this method somewhere else
+    //    move this method somewhere else
     private String getType(Integer num) {
         Map<Integer, String> map = new HashMap<>();
         map.put(4, "INTEGER");
@@ -38,7 +35,7 @@ public class DatabaseService {
         if(connection != null) connection.close();
     }
 
-    public List<String> getTableNames() throws SQLException {
+    public List<String> getTableNames() throws SQLException, NullPointerException {
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData data = connection.getMetaData();
             String[] fetchTypes = {"TABLE", "VIEW"};
@@ -55,7 +52,7 @@ public class DatabaseService {
         }
     }
 
-    public TableMetaData getTableData(String tableName) throws SQLException {
+    public TableMetaData getTableData(String tableName) throws SQLException, NullPointerException {
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData data = connection.getMetaData();
             String[] fetchTypes = {"TABLE", "VIEW"};
@@ -73,11 +70,12 @@ public class DatabaseService {
         }
     }
 
-    public void setActiveDataSource(String database){
-        dataSource = dataSourceList.getMap().get(database);
+    public void setActiveDataSource(String source) throws IllegalArgumentException {
+        this.dataSource = dataSourceRegistry.getDataSource(source)
+                .orElseThrow(IllegalArgumentException::new);
     }
 
-    public DataSource getDataSource() {
-        return dataSource;
+    public List<String> getDataSources() {
+        return this.dataSourceRegistry.getAllSources();
     }
 }

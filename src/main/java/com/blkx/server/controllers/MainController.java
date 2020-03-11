@@ -1,7 +1,6 @@
 package com.blkx.server.controllers;
 
 import com.blkx.server.constants.ResponseMessage;
-import com.blkx.server.models.DataSourceList;
 import com.blkx.server.models.GenerateRequestModel;
 import com.blkx.server.models.ResponseModel;
 import com.blkx.server.models.TableMetaData;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -26,7 +24,6 @@ public class MainController {
     private DatabaseService databaseService;
     private HasuraService hasuraService;
     private ConfigService configService;
-    private DataSourceList dataSourceList =DataSourceList.getInstance();
 
     @Autowired
     public MainController(DatabaseService databaseService, HasuraService hasuraService, ConfigService configService) {
@@ -63,12 +60,16 @@ public class MainController {
     @GetMapping("/{database}/tables")
     public ResponseModel getTableNames(@PathVariable("database") String database) {
         ResponseModel response = new ResponseModel();
-        databaseService.setActiveDataSource(database);
         try {
+            databaseService.setActiveDataSource(database);
             List<String> tableNames = databaseService.getTableNames();
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
             response.setData(tableNames);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            e.printStackTrace();
+            response.setSuccess(false);
+            response.setMessage(ResponseMessage.INVALID_DATASOURCE.toString());
         } catch (SQLException e) {
             e.printStackTrace();
             response.setSuccess(false);
@@ -85,6 +86,10 @@ public class MainController {
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
             response.setData(data);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            response.setSuccess(false);
+            response.setMessage(ResponseMessage.INVALID_DATASOURCE.toString());
         } catch (SQLException e) {
             response.setSuccess(false);
             response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
@@ -147,13 +152,13 @@ public class MainController {
         return response;
     }
 
-    @GetMapping("/dbs")
-    public ResponseModel sendDataSources(){
+    @GetMapping("/sources")
+    public ResponseModel getDatasources(){
         ResponseModel response = new ResponseModel();
-            response.setSuccess(true);
-            response.setMessage(ResponseMessage.SEND_SUCCESS.toString());
-            response.setData(dataSourceList.getMap().keySet());
+        List<String> dataSources = databaseService.getDataSources();
+        response.setSuccess(true);
+        response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
+        response.setData(dataSources);
         return response;
     }
-
 }
