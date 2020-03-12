@@ -100,8 +100,9 @@ public class MainController {
     }
 
     @PostMapping("/generate")
-    public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
+    public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body, @RequestBody String[] clause, @RequestBody boolean condition) {
         ResponseModel response = new ResponseModel();
+        String query;
 
         Map<String, String> groupedData = body.stream()
                 .collect(Collectors.groupingBy(
@@ -110,11 +111,20 @@ public class MainController {
                 )
         );
 
-        String query = groupedData.entrySet().stream()
-                .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
-                .collect(Collectors.joining(" "));
+        if(!condition) {
+            query = groupedData.entrySet().stream()
+                    .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
+                    .collect(Collectors.joining(" "));
 
-        query = String.format("{ \"query\":  \"{ %s }\" }", query);
+            query = String.format("{ \"query\":  \"{ %s }\" }", query);
+        }
+        else {
+            query = groupedData.entrySet().stream()
+                    .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
+                    .collect(Collectors.joining(" "));
+
+            query = String.format("{ \"query\": (%s : \"{\" %s : %s \"}\") \"{ %s }\" }", clause[0], clause[1], clause[2], query);
+        }
 
         UUID uuid = configService.insertNewQuery(query);
         response.setSuccess(true);
