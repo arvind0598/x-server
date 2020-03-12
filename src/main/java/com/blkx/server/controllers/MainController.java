@@ -7,6 +7,7 @@ import com.blkx.server.models.TableMetaData;
 import com.blkx.server.services.ConfigService;
 import com.blkx.server.services.DatabaseService;
 import com.blkx.server.services.HasuraService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -159,6 +160,23 @@ public class MainController {
         response.setSuccess(true);
         response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
         response.setData(dataSources);
+        return response;
+    }
+
+    @GetMapping("/{database}/relations")
+    public ResponseModel getRelations(@PathVariable("database") String database) {
+        ResponseModel response = new ResponseModel();
+        try {
+            databaseService.setActiveDataSource(database);
+            JsonNode responseData = hasuraService.fetchRelationships();
+            response.setSuccess(true);
+            response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
+            response.setData(responseData);
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+            response.setSuccess(false);
+            response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
+        }
         return response;
     }
 }
