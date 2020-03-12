@@ -102,11 +102,6 @@ public class MainController {
     @PostMapping("/generate")
     public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
         ResponseModel response = new ResponseModel();
-//        USE THIS WHEN FULL MODELS CAN BE SENT
-//        List<String> data = body.stream()
-//                .filter(model -> model.getColumnName() == null)
-//                .map(GenerateRequestModel::getTableName)
-//                .collect(Collectors.toList());
 
         Map<String, String> groupedData = body.stream()
                 .collect(Collectors.groupingBy(
