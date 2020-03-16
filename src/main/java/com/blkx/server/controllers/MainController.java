@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @RestController
@@ -103,16 +105,49 @@ public class MainController {
     public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
         ResponseModel response = new ResponseModel();
 
-        Map<String, String> groupedData = body.stream()
+        Map<String, String> innerGroupedData = body.stream()
+                .filter(GenerateRequestModel::getHasParent)
                 .collect(Collectors.groupingBy(
                         GenerateRequestModel::getTableName,
                         Collectors.mapping(GenerateRequestModel::getColumnName, Collectors.joining(" "))
                 )
         );
 
+        Map<String, String> innerQueries = innerGroupedData.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> String.format("%s { %s }", entry.getKey(), entry.getValue())));
+
+        System.out.println(innerQueries);
+
+        Map<String, List<GenerateRequestModel>> partialGroupedData = body.stream()
+                .filter(model -> !model.getHasParent())
+                .collect(Collectors.groupingBy(
+                        GenerateRequestModel::getTableName
+                        )
+                );
+
+        Map<String, String> groupedData = partialGroupedData.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                        List<GenerateRequestModel> models = entry.getValue();
+                        return models.stream()
+                                .map(model -> {
+                                    if (model.getHasChildren()) {
+                                        String name = model.getColumnName();
+                                        return innerQueries.get(model.getColumnName());
+                                    }
+                                    else {
+                                        return model.getColumnName();
+                                    }
+                                })
+                                .collect(Collectors.joining(" "));
+                        }
+                    )
+                );
+
         String query = groupedData.entrySet().stream()
                 .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(" "));
+
+        System.out.println(query);
 
         query = String.format("{ \"query\":  \"{ %s }\" }", query);
 
