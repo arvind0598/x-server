@@ -100,9 +100,8 @@ public class MainController {
     }
 
     @PostMapping("/generate")
-    public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body, @RequestBody String[] clause, @RequestBody boolean condition) {
+    public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
         ResponseModel response = new ResponseModel();
-        String query;
 
         Map<String, String> groupedData = body.stream()
                 .collect(Collectors.groupingBy(
@@ -111,20 +110,52 @@ public class MainController {
                 )
         );
 
-        if(!condition) {
-            query = groupedData.entrySet().stream()
-                    .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
+        Map<String, List<GenerateRequestModel>> group = body.stream()
+                .collect(Collectors.groupingBy(GenerateRequestModel::getTableName));
+
+        group = group.entrySet().stream()
+                .map(entry -> {
+                    List<GenerateRequestModel> models = entry.getValue();
+                    String columns = models.stream().map(GenerateRequestModel::getColumnName).collect(Collectors.joining(" "));
+                    String query = String.format("{ %s }", columns);
+
+                    Map<String, String> data = 
+                })
+
+         String query = group.entrySet().stream()
+                    .map(entry -> {
+                        List<GenerateRequestModel> models = entry.getValue();
+                        return models.stream()
+                                .map(model -> {
+                                    String option = model.getOption();
+                                    String field = model.getField();
+                                    String value = model.getValue();
+                                    String columnName = model.getColumnName();
+                                    switch(option){
+
+                                        //(where: {id: {_eq: 1}})
+                                        case "where": return String.format("%s( where: { %s: {_eq: %s}}){ %s }", entry.getKey(), columnName, field, );
+
+                                        //(order_by: {id: asc})
+                                        case "order_by": return String.format("%s ( order_by: { %s: %s}){ %s }", entry.getKey(),field, value, entry.getValue());
+
+                                        //(limit: 2)
+                                        case "limit": return String.format("%s ( limit: %s}){ %s }", entry.getKey(),value, entry.getValue());
+
+                                        default:
+                                    }
+                                })
+
+
+
+
+                        return String.format("%s { %s }", entry.getKey(), entry.getValue());
+                    })
                     .collect(Collectors.joining(" "));
 
             query = String.format("{ \"query\":  \"{ %s }\" }", query);
-        }
-        else {
-            query = groupedData.entrySet().stream()
-                    .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
-                    .collect(Collectors.joining(" "));
-
-            query = String.format("{ \"query\": (%s : \"{\" %s : %s \"}\") \"{ %s }\" }", clause[0], clause[1], clause[2], query);
-        }
+//            query = String.format("{ \"query\": (%s : \"{\" %s : %s \"}\") \"{ %s }\" }", clause[0], clause[1], clause[2], query);
+//        }
 
         UUID uuid = configService.insertNewQuery(query);
         response.setSuccess(true);
