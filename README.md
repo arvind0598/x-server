@@ -19,7 +19,7 @@ This project is the Spring Boot enabled Java server that runs on port 8081. It c
 1. ```POST /generate``` with a list of entities required to generate an API and fetch the UUID at which it is hosted.
    POST requests can be made in the following ways:
    1.```{ "tableName": "dept", "columnName": "dept_name" }``` -> simple queries.
-   1.```{ "tableName": "emp", "columnName": "name",	"option": "where",	"value": "Suresh", "field": "_eq"	}``` ->queries with      where clause
+   2.```{ "tableName": "emp", "columnName": "name",	"option": "where",	"value": "Suresh", "field": "_eq"	}``` ->queries with      where clause
 1. ```GET /api/{uuid}``` to hit a generated API by passing the UUID that was returned.
 
 ## Setup Instructions
