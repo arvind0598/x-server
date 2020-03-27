@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RestController
 public class MainController {
@@ -104,49 +104,54 @@ public class MainController {
     @PostMapping("/generate")
     public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
         ResponseModel response = new ResponseModel();
-        String conditions = "", attributes, finalQuery = "";
-        Map<String, String> queryMapCond = new HashMap<>();
-        Map<String, String> queryMapAtt = new HashMap<>();
 
-        for(GenerateRequestModel g: body){
-            if(g.getOption()!= null)
-            {
-                switch (g.getOption()) {
-                    case "where":
-                        conditions = String.format("(where: {%s:{_eq: %s}})", g.getColumnName(), g.getValue());
-                        break;
-                    case "order_by":
-                        conditions = String.format("(order_by: {%s: %s})", g.getColumnName(), g.getValue());
-                        break;
-                }
-            }
-            else{
-                conditions = "";
-            }
-            queryMapCond.put(g.getTableName(),conditions);
-        }
+        Map<String, String> innerGroupedData = body.stream()
+                .filter(GenerateRequestModel::getHasParent)
+                .collect(Collectors.groupingBy(
+                        GenerateRequestModel::getTableName,
+                        Collectors.mapping(GenerateRequestModel::getColumnName, Collectors.joining(" "))
+                )
+        );
 
-        for(GenerateRequestModel g: body){
+        Map<String, String> innerQueries = innerGroupedData.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> String.format("%s { %s }", entry.getKey(), entry.getValue())));
 
-            attributes = String.format(" %s ", g.getColumnName());
-            if (!queryMapAtt.containsKey(g.getTableName()))
-            {
-                queryMapAtt.put(g.getTableName(), attributes);
-            }
-            else{
-                queryMapAtt.put(g.getTableName(), queryMapAtt.get(g.getTableName()).concat(attributes));
-            }
-        }
+        System.out.println(innerQueries);
 
-        for(Map.Entry<String, String> entry : queryMapAtt.entrySet())
-        {
-            String tempQuery = String.format("%s %s { %s } %s", entry.getKey(), queryMapCond.get(entry.getKey()), entry.getValue(), "\n");
-            finalQuery = finalQuery.concat(tempQuery);
-        }
+        Map<String, List<GenerateRequestModel>> partialGroupedData = body.stream()
+                .filter(model -> !model.getHasParent())
+                .collect(Collectors.groupingBy(
+                        GenerateRequestModel::getTableName
+                        )
+                );
 
-        finalQuery = String.format("{ \"query\":  \"{ %s }\" }", finalQuery);
+        Map<String, String> groupedData = partialGroupedData.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
+                        List<GenerateRequestModel> models = entry.getValue();
+                        return models.stream()
+                                .map(model -> {
+                                    if (model.getHasChildren()) {
+                                        String name = model.getColumnName();
+                                        return innerQueries.get(model.getColumnName());
+                                    }
+                                    else {
+                                        return model.getColumnName();
+                                    }
+                                })
+                                .collect(Collectors.joining(" "));
+                        }
+                    )
+                );
 
-        UUID uuid = configService.insertNewQuery(finalQuery);
+        String query = groupedData.entrySet().stream()
+                .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(" "));
+
+        System.out.println(query);
+
+        query = String.format("{ \"query\":  \"{ %s }\" }", query);
+
+        UUID uuid = configService.insertNewQuery(query);
         response.setSuccess(true);
         response.setMessage(ResponseMessage.ADD_SUCCESS.toString());
         response.setData(uuid.toString());
