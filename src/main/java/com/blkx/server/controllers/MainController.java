@@ -104,6 +104,28 @@ public class MainController {
     @PostMapping("/generate")
     public ResponseModel generateAPI(@RequestBody List<GenerateRequestModel> body) {
         ResponseModel response = new ResponseModel();
+        int index;
+        String conditions = "";
+        Map<String, String> queryMapCond = new HashMap<>();
+
+        for(GenerateRequestModel g: body){
+            if(g.getOption()!= null)
+            {
+                switch (g.getOption()) {
+                    case "where":
+                        conditions = String.format("(where: {%s:{_eq: %s}})", g.getColumnName(), g.getValue());
+                        break;
+                    case "order_by":
+                        conditions = String.format("(order_by: {%s: %s})", g.getColumnName(), g.getValue());
+                        break;
+                }
+                queryMapCond.put(g.getTableName(),conditions);
+            }
+            else {
+                conditions = "";
+            }
+
+        }
 
         Map<String, String> innerGroupedData = body.stream()
                 .filter(GenerateRequestModel::getHasParent)
@@ -149,6 +171,17 @@ public class MainController {
 
         System.out.println(query);
 
+        for(Map.Entry<String, String> g : queryMapCond.entrySet()){
+            if(query.contains(g.getKey()))
+            {
+                StringBuilder builder = new StringBuilder(query);
+                index = query.indexOf(g.getKey());
+                builder.insert(index + g.getKey().length(), " " + queryMapCond.get(g.getKey()) + " ");
+                query = builder.toString();
+            }
+        }
+
+//        System.out.println(query);
         query = String.format("{ \"query\":  \"{ %s }\" }", query);
 
         UUID uuid = configService.insertNewQuery(query);

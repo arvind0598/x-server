@@ -5,15 +5,46 @@ public class GenerateRequestModel {
     private String columnName;
     private Boolean hasParent;
     private Boolean hasChildren;
+    private String option;
+    private String value;
+    private String field;
 
-    public GenerateRequestModel(String tableName, String columnName, Boolean hasParent, Boolean hasChildren) {
+    public GenerateRequestModel(String tableName, String columnName, Boolean hasParent, Boolean hasChildren, String option, String value, String field) {
         this.tableName = tableName;
         this.columnName = columnName;
         this.hasParent = hasParent;
         this.hasChildren = hasChildren;
+        this.option = option;
+        this.value = value;
+        this.field = field;
+
+    }
+
+    public String getField() {
+        return field;
+    }
+
+    public void setField(String field) {
+        this.field = field;
     }
 
     public GenerateRequestModel() {
+    }
+
+    public String getOption() {
+        return option;
+    }
+
+    public void setOption(String option) {
+        this.option = option;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public String getTableName() {
