@@ -22,7 +22,7 @@ NOTE: option, value, field are optional
 1. ```GET /api/{uuid}``` to hit a generated API by passing the UUID that was returned.
 1. ```GET /{database}/relations``` to set active database and get relations in given database    
                  Request-> ```"databaseName"```   
-                 Response -> ```{"success":true,"message":"Successfully fetched.","data":[{"name":"dept"},{"name":"emp","arrayRelations":[{"relationName":"depts","destTable":"dept","destColumn":"id"}]}]}```
+                 Response -> ```{"success":true,"message":"Successfully fetched.","data":[{"name":"dept","objectRelations":[{"relationName":"emp","sourceColumn":"id"}]},{"name":"emp","arrayRelations":[{"relationName":"depts","destTable":"dept","destColumn":"id"}]}]}```
 
 ## Setup Instructions
 
