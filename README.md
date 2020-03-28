@@ -18,6 +18,9 @@ This project is the Spring Boot enabled Java server that runs on port 8081. It c
 1. ```GET /tables/{tableName}```  to fetch a list of all columns that are in a particular table, from the active database.
 1. ```POST /generate``` with a list of entities required to generate an API and fetch the UUID at which it is hosted.
 1. ```GET /api/{uuid}``` to hit a generated API by passing the UUID that was returned.
+1. ```GET /{database}/relations``` to set active database and get relations in given database    
+                 Request-> "databaseName"   
+                 Response -> {"success":true,"message":"Successfully fetched.","data":[{"name":"employee"}]}
 
 ## Setup Instructions
 
