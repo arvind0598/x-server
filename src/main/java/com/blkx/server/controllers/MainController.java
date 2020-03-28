@@ -113,7 +113,7 @@ public class MainController {
             {
                 switch (g.getOption()) {
                     case "where":
-                        conditions = String.format("(where: {%s:{_eq: %s}})", g.getColumnName(), g.getValue());
+                        conditions = String.format("(where: {%s:{ %s: %s}})", g.getColumnName(), g.getField(), g.getValue());
                         break;
                     case "order_by":
                         conditions = String.format("(order_by: {%s: %s})", g.getColumnName(), g.getValue());
@@ -169,7 +169,7 @@ public class MainController {
                 .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(" "));
 
-        System.out.println(query);
+//        System.out.println(query);
 
         for(Map.Entry<String, String> g : queryMapCond.entrySet()){
             if(query.contains(g.getKey()))
@@ -181,7 +181,7 @@ public class MainController {
             }
         }
 
-//        System.out.println(query);
+        System.out.println(query);
         query = String.format("{ \"query\":  \"{ %s }\" }", query);
 
         UUID uuid = configService.insertNewQuery(query);
