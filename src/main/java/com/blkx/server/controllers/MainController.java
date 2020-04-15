@@ -1,6 +1,9 @@
 package com.blkx.server.controllers;
 
+import com.blkx.server.beans.DataSourceRegistry;
+import com.blkx.server.config.DatasourceConfig;
 import com.blkx.server.constants.ResponseMessage;
+import com.blkx.server.models.Database;
 import com.blkx.server.models.GenerateRequestModel;
 import com.blkx.server.models.ResponseModel;
 import com.blkx.server.models.TableMetaData;
@@ -9,15 +12,29 @@ import com.blkx.server.services.DatabaseService;
 import com.blkx.server.services.HasuraService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.Info;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
+
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -29,17 +46,22 @@ public class MainController {
     private ConfigService configService;
 
     @Autowired
+    private DatasourceConfig datasourceConfig;
+    @Autowired
+    private DataSourceRegistry registry;
+
+    @Autowired
     public MainController(DatabaseService databaseService, HasuraService hasuraService, ConfigService configService) {
         this.databaseService = databaseService;
         this.hasuraService = hasuraService;
         this.configService = configService;
     }
 
-    @GetMapping("/hello")
-    public ResponseModel checkController(@RequestParam("name") String name) {
-        String helloName = "hello " + name;
-        return new ResponseModel(false, ResponseMessage.FETCH_SUCCESS.toString(), helloName);
-    }
+//    @GetMapping("/hello")
+//    public ResponseModel checkController(@RequestParam("name") String name) {
+//        String helloName = "hello " + name;
+//        return new ResponseModel(false, ResponseMessage.FETCH_SUCCESS.toString(), helloName);
+//    }
 
     @PostMapping("/credentials")
     public ResponseModel postCredentials(@RequestBody ObjectNode node) {
@@ -61,10 +83,16 @@ public class MainController {
     }
 
     @GetMapping("/{database}/tables")
-    public ResponseModel getTableNames(@PathVariable("database") String database) {
+    public ResponseModel getTableNames(@PathVariable("database") String database) throws SQLException {
         ResponseModel response = new ResponseModel();
-        try {
+        System.out.println(registry.getAllSources());
+        try{
             databaseService.setActiveDataSource(database);
+            try {
+                    createHasuraInstance(databaseService.getDbRegistry().get(database));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             List<String> tableNames = databaseService.getTableNames();
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
@@ -241,5 +269,70 @@ public class MainController {
             response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
         }
         return response;
+    }
+
+    @PostMapping("/addsource")
+    public ResponseModel addDatabase(@RequestBody Database db) {
+        ResponseModel response = new ResponseModel();
+
+        try {
+            datasourceConfig.createDataSourceDynamically(db);
+            response.setSuccess(true);
+            response.setMessage("Database Added");
+        }catch (Exception e)
+        {
+            response.setMessage(ResponseMessage.RANDOM_ERROR.toString());
+            response.setSuccess(false);
+        }
+        return response;
+    }
+
+    private void createHasuraInstance(String url) throws InterruptedException {
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost("unix:///var/run/docker.sock")
+                .build();
+        DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
+        Info info = dockerClient.infoCmd().exec();
+        System.out.print(info +"\n");
+        List<String> env = new ArrayList<>();
+        env.add("HASURA_GRAPHQL_DATABASE_URL="+url);
+        env.add("HASURA_GRAPHQL_ENABLE_CONSOLE=true");
+//        env.add("--net=host");
+        String id;
+        List<Container> containers = dockerClient.listContainersCmd().exec();
+        for(Container c: containers) {
+            id = c.toString();
+            if(id.contains("blk-x-hasura")) {
+                try {
+                    System.out.println("\n\n\nGot it\n\n" + c.getId());
+                    dockerClient.stopContainerCmd(c.getId()).exec().wait();
+                    System.out.println("stopped");
+                }catch (Exception e) {
+                    System.out.println("Stopped");
+                }
+                try{
+                    dockerClient.removeContainerCmd(c.getId()).exec().wait();
+                }
+                catch(Exception e) {
+                    System.out.println("Removed");
+                }
+            }
+        }
+
+        CreateContainerResponse container = dockerClient.createContainerCmd("hasura/graphql-engine:v1.1.0")
+                .withName("blk-x-hasura")
+                .withHostConfig(HostConfig.newHostConfig().withNetworkMode("host"))
+                .withEnv(env)
+//                .withPortBindings(PortBinding.parse("8080:8080"))
+                .exec();
+        System.out.println("AAh");
+//        dockerClient.removeContainerCmd(container.getId()).wait();
+        try {
+            dockerClient.startContainerCmd(container.getId()).exec().wait();
+        } catch (Exception e) {
+            System.out.println("Started!");
+        }
+//        dockerClient.waitContainerCmd(container.getId()).exec();
+        System.out.println("here");
     }
 }

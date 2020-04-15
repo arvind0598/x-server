@@ -14,6 +14,7 @@ public class DatabaseService {
 
     private DataSourceRegistry dataSourceRegistry;
     private DataSource dataSource;
+    private Map<String, String> dbRegistry = new HashMap<>();
 
     @Autowired
     public DatabaseService(DataSourceRegistry dataSourceRegistry) {
@@ -35,6 +36,13 @@ public class DatabaseService {
         if(connection != null) connection.close();
     }
 
+    public Map<String, String> getDbRegistry() {
+        return dbRegistry;
+    }
+
+    public void setDbRegistry(String dbName, String url) {
+        this.dbRegistry.put(dbName, url);
+    }
     public List<String> getTableNames() throws SQLException, NullPointerException {
         try(Connection connection = dataSource.getConnection()) {
             DatabaseMetaData data = connection.getMetaData();
