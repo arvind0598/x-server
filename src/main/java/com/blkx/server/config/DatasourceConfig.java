@@ -55,14 +55,14 @@ public class DatasourceConfig {
     public DataSource createDataSourceDynamically(Database db) {
         System.out.println("Creating datasource dynamically");
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
-        String temp[] = db.getUrl().split("@");
+        String temp[] = db.getDatasourceUrl().split("@");
         String url = String.format("jdbc:postgresql://%s", temp[1]);
         dataSourceBuilder.url(url);
-        dataSourceBuilder.username(db.getUserName());
-        dataSourceBuilder.password(db.getPassword());
+        dataSourceBuilder.username("postgres");//db.getUserName());
+        dataSourceBuilder.password("blkpassword");//db.getPassword());
         DataSource dataSource = dataSourceBuilder.build();
-        registry.registerDataSource(db.getDbName(), dataSource);
-        databaseService.setDbRegistry(db.getDbName(), db.getUrl());
+        registry.registerDataSource(db.getDatasourceName(), dataSource);
+        databaseService.setDbRegistry(db.getDatasourceName(), db.getDatasourceUrl());
         return dataSource;
     }
 }

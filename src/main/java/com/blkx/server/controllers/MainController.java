@@ -78,6 +78,7 @@ public class MainController {
             e.printStackTrace();
             response.setSuccess(false);
             response.setMessage(ResponseMessage.INVALID_CONFIG.toString());
+            response.setMessage(ResponseMessage.INVALID_CONFIG.toString());
         }
         return response;
     }
@@ -88,11 +89,11 @@ public class MainController {
         System.out.println(registry.getAllSources());
         try{
             databaseService.setActiveDataSource(database);
-            try {
-                    createHasuraInstance(databaseService.getDbRegistry().get(database));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                    createHasuraInstance(databaseService.getDbRegistry().get(database));
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
             List<String> tableNames = databaseService.getTableNames();
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
@@ -116,7 +117,7 @@ public class MainController {
             TableMetaData data = databaseService.getTableData(name);
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
-            response.setData(data);
+            response.setData(data.getColumns());
         } catch (NullPointerException e) {
             e.printStackTrace();
             response.setSuccess(false);
@@ -197,7 +198,7 @@ public class MainController {
                 .map(entry -> String.format("%s { %s }", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(" "));
 
-//        System.out.println(query);
+        System.out.println(query);
 
         for(Map.Entry<String, String> g : queryMapCond.entrySet()){
             if(query.contains(g.getKey()))
@@ -211,7 +212,7 @@ public class MainController {
 
         System.out.println(query);
         query = String.format("{ \"query\":  \"{ %s }\" }", query);
-
+        System.out.println(query);
         UUID uuid = configService.insertNewQuery(query);
         response.setSuccess(true);
         response.setMessage(ResponseMessage.ADD_SUCCESS.toString());
@@ -231,7 +232,7 @@ public class MainController {
 
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
-            response.setData(responseData);
+            response.setData(responseData.get("data"));
         }
         catch (IllegalArgumentException e) {
             response.setSuccess(false);
@@ -257,8 +258,17 @@ public class MainController {
     @GetMapping("/{database}/relations")
     public ResponseModel getRelations(@PathVariable("database") String database) {
         ResponseModel response = new ResponseModel();
+//        try {
+//            databaseService.setActiveDataSource(database);
+//        }catch (Exception e) {
+//            System.out.println(e);
+//        }
         try {
-            databaseService.setActiveDataSource(database);
+            createHasuraInstance(databaseService.getDbRegistry().get(database));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try{
             JsonNode responseData = hasuraService.fetchRelationships();
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());

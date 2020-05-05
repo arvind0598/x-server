@@ -4,15 +4,15 @@ import org.springframework.stereotype.Component;
 
 public class Database {
     private String userName;
-    private String dbName;
+    private String datasourceName;
     private String password;
-    private String url;
+    private String datasourceUrl;
 
-    public Database(String userName, String dbName, String password, String url) {
+    public Database(String userName, String datasourceName, String password, String datasourceUrl) {
         this.userName = userName;
-        this.dbName = dbName;
+        this.datasourceName = datasourceName;
         this.password = password;
-        this.url = url;
+        this.datasourceUrl = datasourceUrl;
     }
 
     public Database() {
@@ -26,12 +26,12 @@ public class Database {
         this.userName = userName;
     }
 
-    public String getDbName() {
-        return dbName;
+    public String getDatasourceName() {
+        return datasourceName;
     }
 
-    public void setDbName(String dbName) {
-        this.dbName = dbName;
+    public void setDatasourceName(String datasourceName) {
+        this.datasourceName = datasourceName;
     }
 
     public String getPassword() {
@@ -42,11 +42,11 @@ public class Database {
         this.password = password;
     }
 
-    public String getUrl() {
-        return url;
+    public String getDatasourceUrl() {
+        return datasourceUrl;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setDatasourceUrl(String datasourceUrl) {
+        this.datasourceUrl = datasourceUrl;
     }
 }
