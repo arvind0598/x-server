@@ -89,11 +89,11 @@ public class MainController {
         System.out.println(registry.getAllSources());
         try{
             databaseService.setActiveDataSource(database);
-//            try {
-//                    createHasuraInstance(databaseService.getDbRegistry().get(database));
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                    createHasuraInstance(databaseService.getDbRegistry().get(database));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             List<String> tableNames = databaseService.getTableNames();
             response.setSuccess(true);
             response.setMessage(ResponseMessage.FETCH_SUCCESS.toString());
@@ -258,16 +258,17 @@ public class MainController {
     @GetMapping("/{database}/relations")
     public ResponseModel getRelations(@PathVariable("database") String database) {
         ResponseModel response = new ResponseModel();
+//        for (int i = 0;i<300000;i++);
 //        try {
 //            databaseService.setActiveDataSource(database);
 //        }catch (Exception e) {
 //            System.out.println(e);
 //        }
-        try {
-            createHasuraInstance(databaseService.getDbRegistry().get(database));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            createHasuraInstance(databaseService.getDbRegistry().get(database));
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         try{
             JsonNode responseData = hasuraService.fetchRelationships();
             response.setSuccess(true);
@@ -335,7 +336,7 @@ public class MainController {
                 .withEnv(env)
 //                .withPortBindings(PortBinding.parse("8080:8080"))
                 .exec();
-        System.out.println("AAh");
+//        System.out.println("AAh");
 //        dockerClient.removeContainerCmd(container.getId()).wait();
         try {
             dockerClient.startContainerCmd(container.getId()).exec().wait();
@@ -343,6 +344,8 @@ public class MainController {
             System.out.println("Started!");
         }
 //        dockerClient.waitContainerCmd(container.getId()).exec();
+        System.out.println("loop");
+        for(int i=0;i<1000000;i++);
         System.out.println("here");
     }
 }
